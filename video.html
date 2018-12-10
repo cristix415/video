@@ -1,0 +1,159 @@
+
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title></title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <style type="text/css">
+        .container {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: black;
+            opacity: 0.5;
+            filter: alpha(opacity=50);
+            
+        }
+
+        .child {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            z-index: 3;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+    <script>
+        $(document).ready(function () {
+            $("#carica").click(function () {
+                var url = "/Handler1.ashx";
+                var data = document.getElementById("hidden").value;
+
+                $.post(url, { imgValue: data })
+                    .done(function (response) {
+                        //   alert("da"   + data);
+                        location.reload();
+                    })
+            })
+                    .fail(function (jqXHR, textStatus) {
+                        alert("nuu post eror");
+                    });
+        });
+        function inizializzaWebCam(videoElement) {
+            var videoPlaying = false;
+            var constraints = {
+                video: true,
+                audio: false
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function (mediaStream) {
+                    document.querySelector("img").style.display = "none";
+
+                    videoElement.style.display = "inline";
+                    videoElement.srcObject = mediaStream;
+                    videoElement.onloadedmetadata = function (e) {
+                        videoElement.play();
+                        videoPlaying = true;
+                    };
+                })
+                .catch(function (err) { alert(err.name + ": " + err.message); });
+        }
+
+        function scattaFoto(buttonScatta, videoId, canvasId, imgId, hiddenId) {
+            video = document.getElementById(videoId);
+            canvas = document.getElementById(canvasId);
+            img = document.getElementById(imgId);
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            var data = canvas.toDataURL('image/png');
+            img.setAttribute('src', data);
+            document.getElementById(hiddenId).setAttribute('value', data);
+            video.style.display = "none";
+            $('#' + imgId).show();
+        }
+
+        function userMedia() {
+
+            if (navigator.mediaDevices === undefined) {
+                navigator.mediaDevices = {};
+            }
+
+            if (navigator.mediaDevices.getUserMedia === undefined) {
+                return getUserMedia = navigator.getUserMedia ||
+                    navigator.webkitGetUserMedia ||
+                    navigator.mozGetUserMedia ||
+                    navigator.msGetUserMedia;
+
+            }
+            return navigator.mediaDevices.getUserMedia;
+        }
+
+        function zum() {
+            var video = document.querySelector("video");
+            video.classList.add("zum");
+        }
+        function catturaWebCam(buttonScattaId, hiddenId, caricaId, videoId, canvasId, imgId) {
+            var video = document.querySelector(videoId);
+            var canvas = document.querySelector(canvasId);
+            var img = document.querySelector(imgId);
+            var hidden = document.getElementById(hiddenId);
+
+            if (userMedia()) {
+                if ($(video).is(":hidden")) {
+                    inizializzaWebCam(video);
+                    video.style.display = "inline";
+                    $(img).hide();
+                    hidden.setAttribute('value', '');
+                    document.getElementById(buttonScattaId).textContent = "Scatta selfie";
+                    document.getElementById(caricaId).disabled = true;
+                }
+                else {                    
+                        scattaFoto($('#' + buttonScattaId), videoId, canvasId, imgId, hiddenId);
+                        $('#' + buttonScattaId).html("Abilita WebCam");
+                        $('#' + caricaId).removeAttr('disabled')                   
+                }
+            }
+            else {
+                console.log("KO");
+                $.alert('Attenzione. Accesso alla webcam non supportato dal browser', {
+                    autoClose: true,
+                    closeTime: 5000,
+                    type: 'info'
+                });
+            }
+        }
+        function afisareDiv() {
+            catturaWebCam("buttonScatta", "hidden", "carica", "video", "canvas", "img");
+            document.getElementById("divv").style.display = "inline";
+            var element = document.getElementById("container");
+            element.classList.add("container");
+
+        }
+    </script>
+</head>
+<body>
+
+    <button onclick="afisareDiv();">Afisare Webcam</button>
+    <div id="container"></div>
+    <div id="divv" class="child" style="display: none; text-align: center;">
+        <div>
+            <input type="hidden" id="hidden" />
+            <button type='button' class='btn btn-secondary first-color-background' id='buttonScatta' onclick='catturaWebCam("buttonScatta", "hidden", "carica", "video", "canvas", "img");'>Avvia WebCam</button>
+            <button type="button" class='btn btn-secondary first-color-background' disabled="disabled" id='carica'>Carica</button>
+        </div>
+        <br />
+        <video id='video' style="display: none;">
+        </video>
+        <canvas id='canvas' style='display: none;' class="zoom"></canvas>
+        <img src="url" id='img' alt='photo' class='container-fluid' style="display: none;" />
+        <input type="file" />
+    </div>
+</body>
+</html>
